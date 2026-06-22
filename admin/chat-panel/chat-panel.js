@@ -260,14 +260,6 @@
         renderAdminMsg(msg.text, msg.sender);
       });
 
-    // Typing indicator for user
-    convInput.addEventListener('input', function () {
-      clearTimeout(adminTypingTimer);
-      db.ref('presence/admin_typing').set(true);
-      adminTypingTimer = setTimeout(function () {
-        db.ref('presence/admin_typing').set(false);
-      }, 1500);
-    });
   }
 
   function renderAdminMsg(text, sender) {
@@ -277,6 +269,14 @@
     convMessages.appendChild(div);
     convMessages.scrollTop = convMessages.scrollHeight;
   }
+
+  convInput.addEventListener('input', function () {
+    clearTimeout(adminTypingTimer);
+    db.ref('presence/admin_typing').set(true);
+    adminTypingTimer = setTimeout(function () {
+      db.ref('presence/admin_typing').set(false);
+    }, 1500);
+  });
 
   convSend.addEventListener('click', sendReply);
   convInput.addEventListener('keydown', function (e) {
