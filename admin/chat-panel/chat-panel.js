@@ -69,6 +69,26 @@
   var convMap     = {}; // sessionId -> { meta, lastMsg, unread }
   var totalUnread = 0;
 
+  // ── Conversation view (Task 8) ────────────────────────────
+  var screenConv   = document.getElementById('cp-screen-conv');
+  var convName     = document.getElementById('cp-conv-name');
+  var convMessages = document.getElementById('cp-conv-messages');
+  var convInput    = document.getElementById('cp-conv-input');
+  var convSend     = document.getElementById('cp-conv-send');
+  var convBack     = document.getElementById('cp-conv-back');
+  var convArchive  = document.getElementById('cp-conv-archive');
+
+  var currentConvId      = null;
+  var currentMsgListener = null;
+  var adminTypingTimer   = null;
+
+  // ── Announcement (Task 8) ─────────────────────────────────
+  var annBar    = document.getElementById('cp-announcement-bar');
+  var annInput  = document.getElementById('cp-ann-input');
+  var annToggle = document.getElementById('cp-announcement-toggle');
+  var annSave   = document.getElementById('cp-announcement-save');
+  var annEnabled = false;
+
   // ── Browser notifications ─────────────────────────────────
   var lastNotifiedMsg = {};
 
@@ -107,7 +127,36 @@
     loadConversations();
   }
 
-  function initAnnouncement() {}
+  function initAnnouncement() {
+    annBar.removeAttribute('hidden');
+
+    db.ref('announcement').once('value', function (snap) {
+      var data = snap.val() || {};
+      annInput.value = data.text || '';
+      annEnabled     = !!data.enabled;
+      annToggle.textContent = annEnabled ? 'ON' : 'OFF';
+      annToggle.style.background = annEnabled ? '#38a169' : '#e53e3e';
+      annToggle.style.color = '#fff';
+      annToggle.style.border = 'none';
+      annToggle.style.borderRadius = '5px';
+      annToggle.style.padding = '6px 10px';
+      annToggle.style.cursor = 'pointer';
+    });
+
+    annToggle.addEventListener('click', function () {
+      annEnabled = !annEnabled;
+      annToggle.textContent = annEnabled ? 'ON' : 'OFF';
+      annToggle.style.background = annEnabled ? '#38a169' : '#e53e3e';
+    });
+
+    annSave.addEventListener('click', function () {
+      db.ref('announcement').set({
+        text:       annInput.value.trim(),
+        enabled:    annEnabled,
+        updated_at: firebase.database.ServerValue.TIMESTAMP
+      });
+    });
+  }
 
   function loadConversations() {
     requestNotificationPermission();
@@ -190,6 +239,75 @@
     }
   }
 
-  // Stub — implemented in Task 8
-  function openConversation(id, name) {}
+  function openConversation(id, name) {
+    currentConvId = id;
+    convName.textContent = name;
+    convMessages.innerHTML = '';
+
+    screenList.style.display = 'none';
+    screenConv.classList.add('visible');
+
+    // Detach previous listener
+    if (currentMsgListener) {
+      db.ref('conversations/' + currentMsgListener + '/messages').off();
+    }
+    currentMsgListener = id;
+
+    db.ref('conversations/' + id + '/messages')
+      .orderByChild('timestamp')
+      .on('child_added', function (snap) {
+        var msg = snap.val();
+        renderAdminMsg(msg.text, msg.sender);
+      });
+
+    // Typing indicator for user
+    convInput.addEventListener('input', function () {
+      clearTimeout(adminTypingTimer);
+      db.ref('presence/admin_typing').set(true);
+      adminTypingTimer = setTimeout(function () {
+        db.ref('presence/admin_typing').set(false);
+      }, 1500);
+    });
+  }
+
+  function renderAdminMsg(text, sender) {
+    var div = document.createElement('div');
+    div.className = 'cp-msg ' + (sender === 'admin' ? 'cp-msg-admin' : 'cp-msg-user');
+    div.textContent = text;
+    convMessages.appendChild(div);
+    convMessages.scrollTop = convMessages.scrollHeight;
+  }
+
+  convSend.addEventListener('click', sendReply);
+  convInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') sendReply();
+  });
+
+  function sendReply() {
+    var text = convInput.value.trim();
+    if (!text || !currentConvId) return;
+    db.ref('conversations/' + currentConvId + '/messages').push({
+      text:      text,
+      sender:    'admin',
+      timestamp: firebase.database.ServerValue.TIMESTAMP
+    });
+    db.ref('presence/admin_typing').set(false);
+    convInput.value = '';
+  }
+
+  convBack.addEventListener('click', function () {
+    if (currentMsgListener) {
+      db.ref('conversations/' + currentMsgListener + '/messages').off();
+      currentMsgListener = null;
+    }
+    db.ref('presence/admin_typing').set(false);
+    screenConv.classList.remove('visible');
+    screenList.style.display = '';
+  });
+
+  convArchive.addEventListener('click', function () {
+    if (!currentConvId) return;
+    db.ref('conversations/' + currentConvId + '/meta/status').set('archived');
+    convBack.click();
+  });
 })();
