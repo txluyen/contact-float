@@ -58,7 +58,10 @@ function txluyen_cf_sanitize( $input ) {
     $clean['firebase_project_id']   = sanitize_text_field( $input['firebase_project_id'] ?? '' );
     $clean['firebase_app_id']       = sanitize_text_field( $input['firebase_app_id'] ?? '' );
     $clean['chat_admin_email']      = sanitize_email( $input['chat_admin_email'] ?? '' );
-    $clean['chat_admin_password']   = sanitize_text_field( $input['chat_admin_password'] ?? '' );
+    $existing = tquanreal_cf_get_options();
+    $clean['chat_admin_password'] = ! empty( $input['chat_admin_password'] )
+        ? sanitize_text_field( $input['chat_admin_password'] )
+        : $existing['chat_admin_password'];
     $clean['chat_panel_password']   = sanitize_text_field( $input['chat_panel_password'] ?? '' );
     $clean['chat_license_key']      = sanitize_text_field( $input['chat_license_key'] ?? '' );
     return $clean;
@@ -170,9 +173,8 @@ function tquanreal_cf_field_admin_email() {
 }
 
 function tquanreal_cf_field_admin_password() {
-    $opts = tquanreal_cf_get_options();
-    printf( '<input type="password" name="txluyen_contact_float_options[chat_admin_password]" value="%s" class="regular-text">', esc_attr( $opts['chat_admin_password'] ) );
-    echo '<p class="description">Password Firebase admin. Lưu ý: lưu trong WP options, chỉ admin WP mới thấy.</p>';
+    echo '<input type="password" name="txluyen_contact_float_options[chat_admin_password]" value="" class="regular-text" placeholder="Nhập password mới để thay đổi">';
+    echo '<p class="description">Để trống nếu không muốn thay đổi password hiện tại.</p>';
 }
 
 function tquanreal_cf_field_panel_password() {

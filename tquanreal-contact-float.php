@@ -187,7 +187,6 @@ function tquanreal_cf_render() {
 
     </div>
     <?php
-    $opts = tquanreal_cf_get_options();
     if ( '1' === $opts['chat_enabled'] && ! empty( $opts['firebase_api_key'] ) ) {
         $pos_class = $opts['position'] === 'left' ? 'tquanreal-cf-chat-left' : 'tquanreal-cf-chat-right';
         ?>
