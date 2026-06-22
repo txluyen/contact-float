@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1a3c6e">
+  <title>Chat Admin</title>
+  <link rel="stylesheet" href="chat-panel.css">
+</head>
+<body>
+
+<!-- Password gate -->
+<div id="cp-gate">
+  <div id="cp-gate-form">
+    <h2>🔐 Chat Admin</h2>
+    <input type="password" id="cp-gate-input" placeholder="Nhập mật khẩu admin panel">
+    <button id="cp-gate-btn">Đăng nhập</button>
+    <p id="cp-gate-error" hidden>Sai mật khẩu</p>
+  </div>
+</div>
+
+<!-- App (ẩn cho đến khi pass đúng) -->
+<div id="cp-app">
+  <div id="cp-header">
+    <h1>💬 Chat Admin</h1>
+    <div id="cp-badge" hidden>0</div>
+  </div>
+
+  <div id="cp-announcement-bar" hidden>
+    <input type="text" id="cp-ann-input" placeholder="Nhập thông báo...">
+    <button id="cp-announcement-toggle">ON</button>
+    <button id="cp-announcement-save">Lưu</button>
+  </div>
+
+  <div id="cp-screen-list"></div>
+
+  <div id="cp-screen-conv">
+    <div id="cp-conv-header">
+      <button id="cp-conv-back">&#8592;</button>
+      <span id="cp-conv-name"></span>
+      <button id="cp-conv-archive">✓ Xong</button>
+    </div>
+    <div id="cp-conv-messages"></div>
+    <div id="cp-conv-input-area">
+      <input type="text" id="cp-conv-input" placeholder="Nhập reply...">
+      <button id="cp-conv-send">&#10148;</button>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase config — thay bằng config thật từ WP Settings -->
+<script>
+  var CHAT_PANEL_PASSWORD = 'PASTE_PANEL_PASSWORD_HERE';
+  var FIREBASE_CONFIG = {
+    apiKey:      'PASTE_API_KEY',
+    authDomain:  'PASTE_AUTH_DOMAIN',
+    databaseURL: 'PASTE_DATABASE_URL',
+    projectId:   'PASTE_PROJECT_ID',
+    appId:       'PASTE_APP_ID'
+  };
+  var ADMIN_EMAIL    = 'PASTE_ADMIN_EMAIL';
+  var ADMIN_PASSWORD = 'PASTE_ADMIN_PASSWORD';
+</script>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script src="chat-panel.js"></script>
+</body>
+</html>
