@@ -138,6 +138,7 @@
           lastMsg: lastMsg,
           unread:  unread
         });
+        convMap[child.key] = { meta: data.meta || {}, lastMsg: lastMsg, unread: unread };
         if (unread) totalUnread++;
         if (unread && lastMsg) {
           var name = (data.meta && data.meta.name) ? data.meta.name : 'Khách';
@@ -162,7 +163,7 @@
     el.dataset.id = conv.id;
 
     var name    = conv.meta.name  || 'Ẩn danh';
-    var phone   = conv.meta.phone ? '<div class="cp-conv-phone">📞 ' + conv.meta.phone + '</div>' : '';
+    var phone   = conv.meta.phone ? '<div class="cp-conv-phone">📞 ' + escapeHtml(conv.meta.phone) + '</div>' : '';
     var time    = conv.lastMsg ? formatTime(conv.lastMsg.timestamp) : '';
     var preview = conv.lastMsg ? conv.lastMsg.text : '(chưa có tin)';
 
