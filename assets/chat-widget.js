@@ -43,6 +43,11 @@
   var sendBtn     = document.getElementById('tquanreal-cf-chat-send');
   var typingEl    = document.getElementById('tquanreal-cf-chat-typing');
 
+  var announcementEl     = document.getElementById('tquanreal-cf-chat-announcement');
+  var announcementTextEl = document.getElementById('tquanreal-cf-chat-announcement-text');
+  var announcementSeen   = storage.getItem(STORAGE_KEY + '_ann_seen');
+  var presenceEl         = document.getElementById('tquanreal-cf-chat-presence');
+
   var chatStarted = false;
   var unreadCount = 0;
 
@@ -56,6 +61,12 @@
     panel.removeAttribute('hidden');
     bubble.setAttribute('aria-expanded', 'true');
     clearBadge();
+    // Mark announcement as seen
+    if (announcementEl && !announcementEl.hasAttribute('hidden')) {
+      var seenVal = String(announcementEl.dataset.updatedAt || Date.now());
+      storage.setItem(STORAGE_KEY + '_ann_seen', seenVal);
+      dot.setAttribute('hidden', '');
+    }
   }
 
   function closePanel() {
@@ -185,6 +196,35 @@
   window.__tquanrealChatDB = db;
 
   // ── Realtime listeners ────────────────────────────────────
-  function listenAnnouncement() {}
-  function listenPresence() {}
+  function listenAnnouncement() {
+    db.ref('announcement').on('value', function (snap) {
+      var data = snap.val();
+      if (data && data.enabled && data.text) {
+        announcementTextEl.textContent = data.text;
+        announcementEl.dataset.updatedAt = String(data.updated_at || '');
+        announcementEl.removeAttribute('hidden');
+
+        // Show orange dot if announcement is newer than last seen
+        var updatedAt = String(data.updated_at || '');
+        if (updatedAt !== announcementSeen) {
+          dot.removeAttribute('hidden');
+        }
+      } else {
+        announcementEl.setAttribute('hidden', '');
+        dot.setAttribute('hidden', '');
+      }
+    });
+  }
+
+  function listenPresence() {
+    db.ref('presence/admin_online').on('value', function (snap) {
+      if (snap.val() === true) {
+        presenceEl.textContent = '● Online';
+        presenceEl.style.color = '#68d391';
+      } else {
+        presenceEl.textContent = 'Sẽ phản hồi sớm';
+        presenceEl.style.color = 'rgba(255,255,255,0.7)';
+      }
+    });
+  }
 })();
