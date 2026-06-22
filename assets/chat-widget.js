@@ -46,7 +46,7 @@
   var chatStarted = false;
   var unreadCount = 0;
 
-  if (!widget || !bubble) return;
+  if (!widget || !bubble || !formEl || !sendBtn || !chatInput) return;
 
   // ── Bubble open/close ─────────────────────────────────────
   var isOpen = false;
@@ -124,12 +124,20 @@
   }
 
   function startChatUI() {
+    if (chatStarted) return;
     chatStarted = true;
     formEl.setAttribute('hidden', '');
     messagesEl.removeAttribute('hidden');
     inputArea.removeAttribute('hidden');
     listenMessages();
     listenTyping();
+    sendBtn.addEventListener('click', function () {
+      sendMessage(chatInput.value);
+      chatInput.value = '';
+    });
+    chatInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { sendMessage(chatInput.value); chatInput.value = ''; }
+    });
   }
 
   function listenMessages() {
@@ -162,15 +170,6 @@
       timestamp: firebase.database.ServerValue.TIMESTAMP
     });
   }
-
-  sendBtn.addEventListener('click', function () {
-    sendMessage(chatInput.value);
-    chatInput.value = '';
-  });
-
-  chatInput.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter') { sendMessage(chatInput.value); chatInput.value = ''; }
-  });
 
   function listenTyping() {
     db.ref('presence/admin_typing').on('value', function (snap) {
