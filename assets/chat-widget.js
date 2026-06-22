@@ -152,6 +152,9 @@
   }
 
   function listenMessages() {
+    // Firebase rules must restrict conversations/{sessionId} to auth != null only.
+    // Without rules, any authenticated (including anonymous) user can read all sessions.
+    // See: docs/superpowers/specs/2026-06-22-firebase-chat-design.md section 6.
     db.ref('conversations/' + sessionId + '/messages')
       .orderByChild('timestamp')
       .on('child_added', function (snap) {
@@ -191,9 +194,6 @@
       }
     });
   }
-
-  // Expose for debugging
-  window.__tquanrealChatDB = db;
 
   // ── Realtime listeners ────────────────────────────────────
   function listenAnnouncement() {
