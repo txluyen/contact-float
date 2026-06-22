@@ -30,12 +30,23 @@ define( 'TQUANREAL_CF_ICON_BANGGIA', '<svg xmlns="http://www.w3.org/2000/svg" vi
  */
 function tquanreal_cf_get_options() {
     $defaults = array(
-        'phone'             => '',
-        'zalo_url'          => '',
-        'banggia_shortcode' => '',
-        'bg_color'          => '#1a3c6e',
-        'text_color'        => '#ffffff',
-        'position'          => 'right',
+        'phone'                  => '',
+        'zalo_url'               => '',
+        'banggia_shortcode'      => '',
+        'bg_color'               => '#1a3c6e',
+        'text_color'             => '#ffffff',
+        'position'               => 'right',
+        // Chat settings
+        'chat_enabled'           => '0',
+        'firebase_api_key'       => '',
+        'firebase_auth_domain'   => '',
+        'firebase_database_url'  => '',
+        'firebase_project_id'    => '',
+        'firebase_app_id'        => '',
+        'chat_admin_email'       => '',
+        'chat_admin_password'    => '',
+        'chat_panel_password'    => '',
+        'chat_license_key'       => '',
     );
     $saved = get_option( 'tquanreal_contact_float_options', array() );
     return wp_parse_args( $saved, $defaults );
@@ -84,6 +95,41 @@ function tquanreal_cf_enqueue() {
         TQUANREAL_CF_VERSION,
         true
     );
+
+    $opts = tquanreal_cf_get_options();
+    if ( '1' === $opts['chat_enabled'] && ! empty( $opts['firebase_api_key'] ) ) {
+        // Firebase SDK
+        wp_enqueue_script( 'firebase-app',  'https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js',      array(),              '10.12.0', true );
+        wp_enqueue_script( 'firebase-auth', 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js',     array( 'firebase-app' ), '10.12.0', true );
+        wp_enqueue_script( 'firebase-db',   'https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js', array( 'firebase-app' ), '10.12.0', true );
+
+        wp_enqueue_style(
+            'tquanreal-cf-chat-style',
+            TQUANREAL_CF_URL . 'assets/chat-widget.css',
+            array(),
+            TQUANREAL_CF_VERSION
+        );
+        wp_enqueue_script(
+            'tquanreal-cf-chat',
+            TQUANREAL_CF_URL . 'assets/chat-widget.js',
+            array( 'firebase-app', 'firebase-auth', 'firebase-db' ),
+            TQUANREAL_CF_VERSION,
+            true
+        );
+
+        $is_premium = ! empty( $opts['chat_license_key'] );
+        wp_localize_script( 'tquanreal-cf-chat', 'tquanrealChat', array(
+            'firebase' => array(
+                'apiKey'      => $opts['firebase_api_key'],
+                'authDomain'  => $opts['firebase_auth_domain'],
+                'databaseURL' => $opts['firebase_database_url'],
+                'projectId'   => $opts['firebase_project_id'],
+                'appId'       => $opts['firebase_app_id'],
+            ),
+            'position'  => $opts['position'],
+            'isPremium' => $is_premium,
+        ) );
+    }
 }
 
 /**
@@ -141,4 +187,48 @@ function tquanreal_cf_render() {
 
     </div>
     <?php
+    $opts = tquanreal_cf_get_options();
+    if ( '1' === $opts['chat_enabled'] && ! empty( $opts['firebase_api_key'] ) ) {
+        $pos_class = $opts['position'] === 'left' ? 'tquanreal-cf-chat-left' : 'tquanreal-cf-chat-right';
+        ?>
+        <div id="tquanreal-cf-chat-widget" class="tquanreal-cf-chat-widget <?php echo esc_attr( $pos_class ); ?>">
+            <button id="tquanreal-cf-chat-bubble" class="tquanreal-cf-chat-bubble" aria-label="Mở chat" aria-expanded="false">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+                <span id="tquanreal-cf-chat-badge" class="tquanreal-cf-chat-badge" hidden>0</span>
+                <span id="tquanreal-cf-chat-dot" class="tquanreal-cf-chat-dot" hidden></span>
+            </button>
+
+            <div id="tquanreal-cf-chat-panel" class="tquanreal-cf-chat-panel" hidden>
+                <div class="tquanreal-cf-chat-header">
+                    <span class="tquanreal-cf-chat-title">Chat với chúng tôi</span>
+                    <span id="tquanreal-cf-chat-presence" class="tquanreal-cf-chat-presence"></span>
+                    <button id="tquanreal-cf-chat-close" class="tquanreal-cf-chat-close" aria-label="Đóng">&times;</button>
+                </div>
+
+                <div id="tquanreal-cf-chat-announcement" class="tquanreal-cf-chat-announcement" hidden>
+                    <span id="tquanreal-cf-chat-announcement-text"></span>
+                </div>
+
+                <div id="tquanreal-cf-chat-form" class="tquanreal-cf-chat-form">
+                    <p>Để lại thông tin để chúng tôi hỗ trợ tốt hơn (tùy chọn)</p>
+                    <input type="text" id="tquanreal-cf-chat-name" placeholder="Tên của bạn">
+                    <input type="tel" id="tquanreal-cf-chat-phone" placeholder="Số điện thoại">
+                    <div class="tquanreal-cf-chat-form-actions">
+                        <button id="tquanreal-cf-chat-skip" type="button">Bỏ qua</button>
+                        <button id="tquanreal-cf-chat-start" type="button">Bắt đầu chat</button>
+                    </div>
+                </div>
+
+                <div id="tquanreal-cf-chat-messages" class="tquanreal-cf-chat-messages" hidden></div>
+
+                <div id="tquanreal-cf-chat-typing" class="tquanreal-cf-chat-typing" hidden>Admin đang gõ...</div>
+
+                <div id="tquanreal-cf-chat-input-area" class="tquanreal-cf-chat-input-area" hidden>
+                    <input type="text" id="tquanreal-cf-chat-input" placeholder="Nhập tin nhắn...">
+                    <button id="tquanreal-cf-chat-send" aria-label="Gửi">&#10148;</button>
+                </div>
+            </div>
+        </div>
+        <?php
+    }
 }
